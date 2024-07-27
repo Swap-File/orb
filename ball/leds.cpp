@@ -2,6 +2,9 @@
 #include <Metro.h>
 #include <FastLED.h>
 
+#define LANTERN_COLOR 0xFFFF55
+
+extern bool lantern_enable;
 extern bool megan_enable;
 extern bool jo_enable;
 extern float battery_voltage;
@@ -58,6 +61,28 @@ const TProgmemRGBPalette16 megan_colors = {
   CRGB::Red
 };
 
+const TProgmemRGBPalette16 LANTERN_COLORs = {
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR,
+  LANTERN_COLOR
+};
+
 CRGBPalette16 colors_to_use;
 CRGBPalette16 currentPalette;
 TBlendType currentBlending = LINEARBLEND;
@@ -94,6 +119,11 @@ void addMeganGlitter(fract8 chanceOfGlitter) {
     leds[random16(NUM_LEDS)] += CRGB::Red;
   }
 }
+void addLanternGlitter(fract8 chanceOfGlitter) {
+  if (random8() < chanceOfGlitter) {
+    leds[random16(NUM_LEDS)] += LANTERN_COLOR;
+  }
+}
 void addJoGlitter(fract8 chanceOfGlitter) {
   if (random8() < chanceOfGlitter) {
     leds[random16(NUM_LEDS)] += CRGB::Purple;
@@ -124,6 +154,8 @@ void leds_init(void) {
     colors_to_use = megan_colors;
   if (jo_enable)
     colors_to_use = jo_colors;
+  if (lantern_enable)
+    colors_to_use = LANTERN_COLORs;
 }
 
 static void render_to_output(void) {
@@ -162,10 +194,15 @@ void leds_update(int mode) {
     static int offset = 0;
     if (mode == 0) {
       currentPalette = colors_to_use;
-      float val = (exp(sin((millis() - offset) / 2000.0 * PI)) - 0.36787944) * 108.0;
+      float val;
+      if (lantern_enable)
+        val = (exp(sin((millis() - offset) / 2000.0 * PI)) - 0.36787944) * 100.0 +8;
+      else
+        val = (exp(sin((millis() - offset) / 2000.0 * PI)) - 0.36787944) * 108.0;
 
       CRGB faded_color = ColorFromPalette(currentPalette, gHue, brightness, currentBlending);
-      faded_color.nscale8_video(val);
+
+        faded_color.nscale8_video(val);
 
       for (int i = 0; i < NUM_LEDS; i++)
         leds[i] = faded_color;
@@ -183,6 +220,10 @@ void leds_update(int mode) {
       }
       if (megan_enable) {
         addMeganGlitter(80);
+      }
+
+      if (lantern_enable) {
+        addLanternGlitter(80);
       }
     }
 
@@ -205,6 +246,13 @@ void leds_update(int mode) {
           if (pos > NUM_LEDS) pos = 0;
           leds[pos] += ColorFromPalette(currentPalette, gHue, brightness, currentBlending);
         }
+        if (lantern_enable) {
+          fadeToBlackBy(leds, NUM_LEDS, 20);
+          if (pos > NUM_LEDS) pos = 0;
+          leds[pos] += CHSV(gHue, 255, 192);
+          addGlitter(50);
+        }
+
       } else {
         //battery meter
 

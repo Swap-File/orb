@@ -6,8 +6,10 @@
 
 #define NUM_EFFECTS 2
 
+bool lantern_enable = true;
 bool megan_enable = false;
-bool jo_enable = true;
+bool jo_enable = false;
+
 bool auto_change_enabled = true;
 
 
